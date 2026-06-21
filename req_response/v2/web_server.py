@@ -41,3 +41,4 @@ while True:
     conn_socket.send(resposta.encode())
     conn_socket.close()
 
+
