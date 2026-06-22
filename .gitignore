@@ -1,3 +1,4 @@
 *.sh
 *.exe
-
+__pycache__
+venv
