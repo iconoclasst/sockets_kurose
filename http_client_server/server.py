@@ -2,6 +2,7 @@ import socket
 import json
 import datetime
 import handle
+import struct
 
 ip, port = 'localhost', 38300
 
@@ -15,6 +16,11 @@ while 1:
     request = json.loads(conn_socket.recv(1024).decode())
 
     try:
+        answer = handle.response(request)
+        header = json.dumps(answer).encode()
+
+        conn_socket.sendall(struct.pack('!I', len(header)))
+        conn_socket.sendall(header)
         handle.handle_request(request, conn_socket, addr)
     except:
         print(f'Error')

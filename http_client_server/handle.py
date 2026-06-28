@@ -1,3 +1,5 @@
+import datetime
+
 def verify_file(file):
     try:
         with open(file, 'r') as f:
@@ -6,23 +8,25 @@ def verify_file(file):
         return False
 
 def handle_request(request, conn_socket, addr):
-    filename = request['object']
+    req_line = request['Request-line']
+    req_line = req_line.split(" ")
+    filename = req_line[1]
 
     if verify_file(filename):
         file = open(filename, 'rb')
-        kar = file.read(6053)
+        kar = file.read(4096)
 
-        conn_socket.send(kar)
+        conn_socket.sendall(kar)
         print(f'File sent to {addr}')
         file.close()
     else:
         print(f'Error! the file {filename} was not found.')
 
 def response(request):
-    req_line = requisicao['Request-line']
-    host = requisicao['Host']
-    conn = requisicao['Conn']
-    user_agent = requisicao['User-agent']
+    req_line = request['Request-line']
+    host = request['Host']
+    conn = request['Conn']
+    user_agent = request['User-agent']
 
     req_line = req_line.split(" ")
 
@@ -30,13 +34,12 @@ def response(request):
     file = req_line[1]
     version = req_line[2]
 
-    code = ""
-    if file in objetos:
-        code = "200 OK"
-    else:
-        code = "404 not found"
-
     date = str(datetime.datetime.now())
+
+    if verify_file(file):
+        code = '200 ok'
+    else:
+        code = '404 not found'
 
     answer = {
         "State":version + " " + code,
