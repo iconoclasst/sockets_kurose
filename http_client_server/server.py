@@ -1,30 +1,29 @@
 import socket
 import json
-import datetime
 import handle
-import struct
 
-ip, port = 'localhost', 38300
+
+IP, PORT = 'localhost', 55000
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((ip, port))
+server.bind((IP, PORT))
+
 server.listen(1)
 
-print(f'Listen on {ip}:{port}')
 while 1:
-    conn_socket, addr = server.accept()
-    request = json.loads(conn_socket.recv(1024).decode())
+    conn, addr = server.accept()
+    print(f'Conn with {addr}')
 
-    try:
-        answer = handle.response(request)
-        header = json.dumps(answer).encode()
+    message = json.loads(conn.recv(1024).decode())
 
-        conn_socket.sendall(struct.pack('!I', len(header)))
-        conn_socket.sendall(header)
-        handle.handle_request(request, conn_socket, addr)
-    except:
-        print(f'Error')
+    header, size_header = handle.handle(message)
+
+    conn.send(size_header.encode())
+
+    conn.send(json.dumps(header).encode())
+
+    handle.send_file(message, conn)
     
-    conn_socket.close()
+    conn.close()
 
 server.close()

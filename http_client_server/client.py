@@ -1,44 +1,38 @@
 import socket
-import struct
 import json
 
-def receiv(client, n):
-    data = b''
-    while len(data) < n:
-        try:
-            packet = client.recv(n - len(data))
-        except:
-            print('No connection')
-        data += packet
-    return data
-
-ip, port = 'localhost', 38300
+IP, PORT = 'localhost', 55000
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect((ip, port))
+client.connect((IP, PORT))
 
 filename = 'index.html'
 
 message = {
-    'Request-line': 'GET' + " " + filename + " " + "1.1",
-    'Host': ip,
-    'Conn': 'close',
-    'User-agent': 'brave'
+    'Request-Line': 'GET' + ' ' + filename + ' ' + '1.1',
+    'Host': IP,
+    'Connection': 'close',
+    'User-agent': 'Brave'
 }
 
-client.send(json.dumps(message).encode())
+message = json.dumps(message)
+client.send(message.encode())
 
-size = struct.unpack("!I", receiv(client, 4))[0]
-response_header = json.loads(receiv(client, size).decode())
-print(response_header)
+size_header = client.recv(4).decode()
+print(size_header)
+size_header = int(size_header)
 
-try:
-    file = open(filename,'wb')
-    data = client.recv(4096)
-    file.write(data)
-    print('File received!')
-except:
-    print('Error! file not received')
+# print(type(size_header))
+# size_header = int(size_header)
+header = json.loads(client.recv(size_header))
+print(header)
 
+size = int(header['Size']) 
+print(size)
+
+file = open('index.html', 'wb')
+data = client.recv(size)
+file.write(data)
 file.close()
+
 client.close()

@@ -1,53 +1,58 @@
+import os
+import sys
 import datetime
 
-def verify_file(file):
+def verify(filename):
     try:
-        with open(file, 'r') as f:
+        with open(filename, 'r') as f:
             return True
-    except IOError:
+    except:
         return False
+    
+def handle(message):
+    request_line = message['Request-Line'].split(' ')
+    method = request_line[0]
+    filename = request_line[1]
+    version = request_line[2]
 
-def handle_request(request, conn_socket, addr):
-    req_line = request['Request-line']
-    req_line = req_line.split(" ")
-    filename = req_line[1]
+    if verify(filename):
 
-    if verify_file(filename):
-        file = open(filename, 'rb')
-        kar = file.read(4096)
+        size = os.path.getsize(filename)
 
-        conn_socket.sendall(kar)
-        print(f'File sent to {addr}')
-        file.close()
-    else:
-        print(f'Error! the file {filename} was not found.')
+        date = str(datetime.datetime.now())
 
-def response(request):
-    req_line = request['Request-line']
-    host = request['Host']
-    conn = request['Conn']
-    user_agent = request['User-agent']
+        if verify(filename):
+            code = '200 ok'
+        else:
+            code = '404 not found'
 
-    req_line = req_line.split(" ")
-
-    method = req_line[0]
-    file = req_line[1]
-    version = req_line[2]
-
-    date = str(datetime.datetime.now())
-
-    if verify_file(file):
-        code = '200 ok'
-    else:
-        code = '404 not found'
-
-    answer = {
+    header = {
         "State":version + " " + code,
         "Conn": "close",
         "Date": date,
         "Server": "Linux mint",
         "Last modified": date,
-        "Content-type": "text/html"
+        "Content-type": "text/html",
+        'Size': str(size)
     }
 
-    return answer
+
+    size_header = sys.getsizeof(header)
+
+    return header, str(size_header)
+
+def send_file(message, conn):
+    request_line = message['Request-Line'].split(' ')
+    filename = request_line[1]
+
+    size = os.path.getsize(filename)
+
+    file = open (filename, 'rb')
+    bfile = file.read(size)
+
+    conn.send(bfile)
+    print('File sent')
+
+    file.close()
+
+    
